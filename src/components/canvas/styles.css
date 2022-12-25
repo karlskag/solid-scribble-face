@@ -1,3 +1,13 @@
 .main-canvas {
   border: 1px solid black;
+  position: relative;
+}
+
+.stage-controls {
+  display: flex;
+  justify-content: center;
+}
+
+.stage-controls > button {
+  margin: 10px
 }
