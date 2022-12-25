@@ -6,6 +6,7 @@ export type GameState = {
 }
 
 let timerId
+const GAME_TIMER = 1000 * 60
 
 export const GameStage = () => {
   const [gameState, setGameState] = createSignal<GameState>({ status: 'IDLE' })
@@ -17,7 +18,7 @@ export const GameStage = () => {
   const handleStart = () => {
     if (gameState().status === 'IDLE') {
       setGameState({ status: 'PLAYING' })
-      timerId = setTimeout(handleGameOver, 10000)
+      timerId = setTimeout(handleGameOver, GAME_TIMER)
     }
   }
 
