@@ -1,6 +1,9 @@
 .main-canvas {
   border: 1px solid black;
   position: relative;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .stage-controls {
@@ -11,3 +14,8 @@
 .stage-controls > button {
   margin: 10px
 }
+
+@media (min-width: 480px) {
+
+}
+

@@ -23,20 +23,32 @@ export const Canvas = (props: CanvasProps) => {
 
   onMount(() => {
     canvas.style.backgroundImage = imgUrl()
-    canvas.style.backgroundPosition = 'center'
-    canvas.style.backgroundRepeat = 'no-repeat'
-    canvas.style.backgroundSize = 'contain'
+
+    // Set canvas event listeners that need to be passive
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault()
+      handleDraw({
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      })
+    }, { passive: false })
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault()
+      handleStartDrawing({
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      })
+    }, { passive: false })
   })
 
   createEffect(() => {
     canvas.style.backgroundImage = imgUrl()
   })
 
-  const handleMouseDown = (e: MouseEvent) => {
+  const handleStartDrawing = ({ x, y }: { x: number, y: number }) => {
     setDrawing(true)
     props.onStartGame()
-
-    const { x, y } = e
     const ctx = canvas.getContext('2d')
 
     if (ctx) {
@@ -47,17 +59,16 @@ export const Canvas = (props: CanvasProps) => {
     }
   }
 
-  const handleMouseUp = (e: MouseEvent) => {
+  const handleStopDrawing = () => {
     setDrawing(false)
   }
 
-  const handleMouseLeave = (e: MouseEvent) => {
+  const handleLeaveCanvas = () => {
     setDrawing(false)
   }
 
-  const handleMouseMove= (e: MouseEvent) => {
+  const handleDraw = ({ x, y }: { x: number, y: number }) => {
     if (isDrawing()) {
-      const { x, y } = e
       const ctx = canvas.getContext('2d')
 
       if (ctx) {
@@ -87,12 +98,13 @@ export const Canvas = (props: CanvasProps) => {
     <canvas
       ref={canvas}
       class="main-canvas"
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      height={600}
-      width={600}
+      onMouseDown={handleStartDrawing}
+      onMouseUp={handleStopDrawing}
+      onTouchEnd={handleStopDrawing}
+      onMouseMove={handleDraw}
+      onMouseLeave={handleLeaveCanvas}
+      height={500}
+      width={350}
     />
     <div class="stage-controls">
       <button onClick={toggleBackground}>Hide/Show picture</button>
