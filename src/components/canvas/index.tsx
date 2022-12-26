@@ -32,7 +32,7 @@ export const Canvas = (props: CanvasProps) => {
   onMount(() => {
     canvas.style.backgroundImage = imgUrl()
 
-    window.addEventListener('drawing', handleRemoteDraw)
+    window.addEventListener('drawing', handleRemoteDraw as EventListener)
 
     // Set canvas event listeners that need to be passive
     canvas.addEventListener('touchmove', (e) => {
@@ -61,6 +61,7 @@ export const Canvas = (props: CanvasProps) => {
       handleDraw({ ...e.detail, remote: true })
     }
 
+    // If 500ms passes, handle as new line
     clearTimeout(timerId)
     timerId = setTimeout(handleStopDrawing, 500)
   }
