@@ -3,12 +3,14 @@ import {createEffect, createSignal, onMount} from "solid-js";
 import {GameState} from "~/components/game-stage";
 
 let canvas: HTMLCanvasElement
+let timerId: number
 const getImgUrl = () => `url(images/obj_${Math.floor(Math.random() * 10) + 1 }.jpeg)`
 
 type CanvasProps = {
   onStartGame: () => void
   onResetGame: () => void
   gameStatus: GameState['status']
+  sendData : (data: any) => void
 }
 
 export const Canvas = (props: CanvasProps) => {
@@ -16,21 +18,31 @@ export const Canvas = (props: CanvasProps) => {
   const [imgUrl, setImgUrl] = createSignal(getImgUrl())
 
   createEffect(() => {
-    if (props.gameStatus === 'ENDED') {
+    if (props.gameStatus === 'WATCHING') {
+      canvas.style.backgroundImage = ''
+    } else if (props.gameStatus === 'ENDED') {
       toggleBackground()
     }
+  })
+
+  createEffect(() => {
+    canvas.style.backgroundImage = imgUrl()
   })
 
   onMount(() => {
     canvas.style.backgroundImage = imgUrl()
 
+    window.addEventListener('drawing', handleRemoteDraw)
+
     // Set canvas event listeners that need to be passive
     canvas.addEventListener('touchmove', (e) => {
       e.preventDefault()
-      handleDraw({
+      const coords = {
         x: e.touches[0].clientX,
         y: e.touches[0].clientY,
-      })
+      }
+
+      handleDraw(coords)
     }, { passive: false })
 
     canvas.addEventListener('touchstart', (e) => {
@@ -42,20 +54,41 @@ export const Canvas = (props: CanvasProps) => {
     }, { passive: false })
   })
 
-  createEffect(() => {
-    canvas.style.backgroundImage = imgUrl()
-  })
+  const handleRemoteDraw = (e: CustomEvent) => {
+    if (!isDrawing()) {
+      handleStartDrawing({ ...e.detail, remote: true })
+    } else {
+      handleDraw({ ...e.detail, remote: true })
+    }
 
-  const handleStartDrawing = ({ x, y }: { x: number, y: number }) => {
+    clearTimeout(timerId)
+    timerId = setTimeout(handleStopDrawing, 500)
+  }
+
+  const handleStartDrawing = ({ x, y, remote }: { x: number, y: number, remote?: boolean }) => {
     setDrawing(true)
     props.onStartGame()
     const ctx = canvas.getContext('2d')
 
     if (ctx) {
-      const transformedCoords = { x: x - canvas.offsetLeft, y: y - canvas.offsetTop }
+      const transformedCoords = remote ? { x, y } : { x: x - canvas.offsetLeft, y: y - canvas.offsetTop }
       ctx.strokeStyle = 'red'
       ctx.beginPath()
       ctx.moveTo(transformedCoords.x, transformedCoords.y)
+    }
+  }
+
+  const handleDraw = ({ x, y, remote }: { x: number, y: number, remote?: boolean }) => {
+    if (isDrawing()) {
+      const ctx = canvas.getContext('2d')
+
+      if (ctx) {
+        const transformedCoords = remote ? { x, y } : { x: x - canvas.offsetLeft, y: y - canvas.offsetTop }
+        ctx.lineTo(transformedCoords.x, transformedCoords.y)
+        ctx.stroke()
+
+        if (!remote) props.sendData(transformedCoords)
+      }
     }
   }
 
@@ -65,18 +98,6 @@ export const Canvas = (props: CanvasProps) => {
 
   const handleLeaveCanvas = () => {
     setDrawing(false)
-  }
-
-  const handleDraw = ({ x, y }: { x: number, y: number }) => {
-    if (isDrawing()) {
-      const ctx = canvas.getContext('2d')
-
-      if (ctx) {
-        const transformedCoords = { x: x - canvas.offsetLeft, y: y - canvas.offsetTop }
-        ctx.lineTo(transformedCoords.x, transformedCoords.y)
-        ctx.stroke()
-      }
-    }
   }
 
   const toggleBackground = () => {
